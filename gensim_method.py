@@ -10,6 +10,7 @@ from gensim.corpora import Dictionary
 from functools import reduce
 from gensim.similarities import MatrixSimilarity
 from collections import Counter
+from matplotlib import pyplot as plt
 
 
 #read in data
@@ -19,7 +20,6 @@ dat = pd.read_csv('/home/sir/projects/time_series_segment_detection/data.csv')
 
 dat['date'] = dat['date'].apply(pd.to_datetime)
 dat = dat.sample(n=1000)
-
 dat = dat.sort_values(by=['date'], ascending=True)
 
 
@@ -45,10 +45,10 @@ for start, end in dateranges:
     values = reduce (operator.add, values.values.tolist())
     windows.append(values)
 
+#troublesome...... or at least - will need to tie dates back to clusters
 windows = [x for x in windows if len(x) != 0]
 
 #split common
-windows = windows[:30] + windows[-30:] + windows[30:60] + windows[-60:-30]  
 
 #build TFIDF 
 dct = Dictionary(windows)
@@ -58,10 +58,11 @@ sim = MatrixSimilarity(corpus, num_features=len(dct))
 sim = sim[corpus]
 
 #can i be lazy? scipy time
+#TODO:  improve w/ heuristic being 
 
 linked = hac.linkage(sim, method='single', metric='euclidean')
 
-threshold = 0.1
+threshold = 0.05
 thresholdIncrement = 0.05
 clusters = hac.fcluster( linked ,t=threshold ,criterion='distance')
 
@@ -70,6 +71,13 @@ num_singletons = len([True for cl, count in Counter(clusters).items() if count =
 while num_singletons > 0 : 
     threshold += thresholdIncrement
     clusters = hac.fcluster( linked ,t=threshold ,criterion='distance')
-    num_singletons = len([True for cl, count in Counter(clusters).items() if count <  window//2])
+    num_singletons = len([True for cl, count in Counter(clusters).items() if count < window//2])
     print (threshold, num_singletons)
 
+plt.figure(figsize=(10,7))
+hac.dendrogram(linked, color_threshold=threshold, orientation='top', distance_sort='descending') 
+plt.savefig('/mnt/c/Users/Sir/Documents/fig.png')
+
+# for x,y in zip(clusters, windows) : 
+#     print(x, sorted(y))
+#tie index into dates
