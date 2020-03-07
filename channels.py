@@ -17,7 +17,7 @@ from collections import Counter
 from tqdm import tqdm
 
 #read in data
-dat = pd.read_csv('C:/Users/Sir/data.csv')
+dat = pd.read_csv('C:/Users/brady/time_series_segment_detection/data.csv')
 dat = dat.sort_values(by=['date'])
 #dat = dat
 
@@ -50,7 +50,6 @@ for i, vals in enumerate(windows):
 
 plt.scatter(x,y)
 plt.show()
-
 
 
 #Build data based on samples(dynamic) and slices (static)
@@ -90,6 +89,8 @@ test_targets = targets[2400:]
 training = training[:2400]
 training_targets = targets[:2400]
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print(device)
 
 class Net(nn.Module):
     def __init__(self):
@@ -118,8 +119,12 @@ class Net(nn.Module):
             num_features *= s
         return num_features
 
+
+
+
 net = Net()
-training_targets = torch.Tensor(training_targets)  # a dummy target, for example
+net.to(device)
+training_targets = torch.Tensor(training_targets).to(device)  # a dummy target, for example
 #target = target.view(1, -1)  # make it the same shape as output
 
 criterion = nn.MSELoss()
@@ -133,6 +138,9 @@ for epoch in range(5):  # loop over the dataset multiple times
         h,w = inputs.shape
         inputs = inputs.reshape(1,1,h,w)
         labels = training_targets[i].view(1,-1)
+        #accomodate gpu
+        inputs = inputs.to(device)
+        labels = labels.to(device)
 
         # zero the parameter gradients
         optimizer.zero_grad()
@@ -155,9 +163,10 @@ data, _ = build_windows(dat, onehot)
 inputs = torch.Tensor(data)
 h,w = inputs.shape
 inputs = inputs.reshape(1,1,h,w)
+inputs = inputs.to(device)
 
 output = net(inputs)
-test_targets = torch.Tensor(test_targets)  # a dummy target, for example
+test_targets = torch.Tensor(test_targets).to(device)  # a dummy target, for example
 
 #test accuracy on test set
 accuracy =0 
@@ -167,9 +176,14 @@ for i,data in tqdm(enumerate(test)):
         inputs = inputs.reshape(1,1,h,w)
         labels = test_targets[i].view(1,-1)
 
+        #accomodate gpu
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
         is_static =test_targets[i][0] > test_targets[i][1]
         output = net(inputs)
         predicted_static = output[0][0] > output[0][1]
         if is_static == predicted_static:
              accuracy += 1
+        print(output, " | " ,labels)
 print("Model accuracy on test data: " ,accuracy/len(test))
