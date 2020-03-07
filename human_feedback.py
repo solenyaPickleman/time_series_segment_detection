@@ -66,7 +66,7 @@ net.to(device)
 
 human = []
 machine = []
-for files in ['C:/Users/brady/time_series_segment_detection/data.csv', 'C:/Users/brady/time_series_segment_detection/data2.csv']+ glob.glob('C:/Users/brady/Downloads/*.csv'):
+for files in ['C:/Users/brady/time_series_segment_detection/data.csv', 'C:/Users/brady/time_series_segment_detection/data2.csv']+ glob.glob('C:/Users/brady/Downloads/*.csv') + ['C:/Users/brady/time_series_segment_detection/data.csv', 'C:/Users/brady/time_series_segment_detection/data2.csv']:
     dat = pd.read_csv(files)
     dat.columns= ['date','value']
     dat = dat.sort_values(by=['date'])
@@ -99,8 +99,9 @@ for files in ['C:/Users/brady/time_series_segment_detection/data.csv', 'C:/Users
                 x.append(i)
                 y.append(ind)
 
+#sooooo y = mx? 
     plt.scatter(x,y)
-    
+    plt.scatter([max(x)-a for a in x],y)
 
     axstatic = plt.axes([0.7, 0.05, 0.1, 0.075])
     axdynamic = plt.axes([0.81, 0.05, 0.1, 0.075])
